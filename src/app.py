@@ -19,7 +19,7 @@ app.config["SQLALCHEMY_ECHO"] = True
 db.init_app(app)
 with app.app_context():
     db.create_all()
-
+    
 
 # success and failure responses
 def success_response(data, code= 200):
@@ -44,18 +44,28 @@ def create_user():
     Endpoint for creating a user 
     """
     body = json.loads(request.data)
+
     username = body.get("username")
     if username is None:
         return failure_response("Username not found!", 400)
+
     password = body.get("password")
     if password is None:
         return failure_response("Password not found!", 400)
+
     email = body.get("email")
     if email is None:
         return failure_response("Email not found!", 400)
-    new_user=User(username = username, password = password, email = email)
+
+    new_user=User(
+        username = username, 
+        password = password, 
+        email = email
+        )
+
     if new_user is None:
         return failure_response("User not found!")
+
     db.session.add(new_user)
     db.session.commit()
     return success_response(new_user.serialize(), 201)
@@ -70,10 +80,10 @@ def get_user_by_id(user_id):
         return failure_response("User not found")
     return success_response(user.serialize())
 
-@app.route("/api/users/<int:course_id>/", methods=["DELETE"])
+@app.route("/api/users/<int:user_id>/", methods=["DELETE"])
 def delete_user(user_id):
     """
-    Endpoint for creating a user by id
+    Endpoint for deleting a user by id
     """
     user = User.query.filter_by(id=user_id).first()
     if user is None:
@@ -82,7 +92,20 @@ def delete_user(user_id):
     db.session.commit()
     return success_response(user.serialize())
 
-app.route("/api/users/<int:course_id>/", methods=["POST"])
+@app.route("/api/posts/<item>/") 
+def get_post_by_question(item):
+    """
+    Endpoint for getting a post by item
+    """
+    post = Post.query.filter_by(item = item).all()
+    if post is None:
+        return failure_response("No posts found that match your item")
+    posts = []
+    for x in post:
+        posts.append(x.serialize())
+    return success_response(posts)
+
+@app.route("/api/users/<int:user_id>/", methods=["POST"])
 def update_user(user_id):
     """
     Endpoint for updating a user by id
@@ -97,49 +120,122 @@ def update_user(user_id):
     db.session.commit()
     return success_response(user.serialize())
 
+@app.route("/api/users/<int:user_id>/posts/", methods=["POST"])
 def create_post(user_id):
     """
-    Endpoint for creating a post
-    for a user by id 
+    Endpoint for creating a post for a user by id 
     """
     user = User.query.filter_by(id=user_id).first()
     if user is None:
         return failure_response("User not found")
     body = json.loads(request.data)
     # create new Post object and commit it to db
+
+    item = body.get("item")
+    if item is None:
+        return failure_response("Item not specified!")
+
+    description = body.get("description")
+    if description is None:
+        return failure_response("Description not specified!")
+
+    location = body.get("location")
+    if location is None:
+        return failure_response("Location not specified!")
+
+    question = body.get("question")
+    if question is None:
+        return failure_response("Question not specified!")
+
+    returned = body.get("returned")
+    if returned is None:
+        return failure_response("It is not specified if this item is returned or not!")
+
     new_post = Post(
         user_id = user_id,
-        username = user.username,
-        description = body.get("description"),
-        location = body.get("location"),
+        #username = user["username"],
+        item = item,
+        description = description,
+        location = location,
         timestamp = datetime.now(),
-        question = body.get("question"),
-        returned = body.get("returned")
+        question = question,
+        returned = returned
     )
     db.session.add(new_post)
     db.session.commit()
     return success_response(new_post.serialize())
 
-def create_comment(post_id):
+@app.route("/api/posts/<int:post_id>/", methods=["DELETE"])
+def delete_post(post_id):
+    """
+    Endpoint for deleting a post by id 
+    """
+    post = Post.query.filter_by(id=post_id).first()
+    if post is None:
+        return failure_response("Post not found!")
+    db.session.delete(post)
+    db.session.commit()
+    return success_response(post.serialize())
+
+@app.route("/api/posts/<int:post_id>/", methods=["POST"])
+def update_post(post_id):
+    """
+    Endpoint for updating a post by id
+    """
+    body = json.loads(request.data)
+    post = Post.query.filter_by(id=post_id).first()
+    if post is None:
+        return failure_response("Post not found!")
+    post.user_id = post.user_id
+    post.description = body.get("description", post.description)
+    post.location = body.get("location", post.location)
+    post.question = body.get("question", post.question)
+    post.returned = body.get("returned", post.returned)
+    post.timestamp = datetime.now()
+    db.session.commit()
+    return success_response(post.serialize())
+
+@app.route("/api/users/<int:user_id>/posts/<int:post_id>/comments/", methods=["POST"])
+def create_comment(user_id, post_id):
     """
     Endpoint for creating a comment
     for a user by id 
     """
     post = Post.query.filter_by(id=post_id).first()
     if post is None:
-        return failure_response("Post not found")
+        return failure_response("Post not found!")
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        return failure_response("User not found!")
     body = json.loads(request.data)
-    # create new Post object and commit it to db
+    # create new Comment object and commit it to db
+    message = body.get("message")
+    if message is None:
+        return failure_response("Message not found!")
+
     new_comment = Comment(
-        user_id = post.user_id,
+        user_id = user_id,
+        #username = post.username,
         post_id = post_id,
-        username = post.username,
-        description = body.get("description"),
-        location = body.get("location"),
+        message = message,
         timestamp = datetime.now(),
-        question = body.get("question"),
-        returned = body.get("returned")
     )
     db.session.add(new_comment)
     db.session.commit()
     return success_response(new_comment.serialize())
+
+@app.route("/api/comments/<int:comment_id>/", methods=["DELETE"])
+def delete_comment(comment_id):
+    """
+    Endpoint for deleting a comment by id 
+    """
+    comment = Comment.query.filter_by(id=comment_id).first()
+    if comment is None:
+        return failure_response("Comment not found!")
+
+    db.session.delete(comment)
+    db.session.commit()
+    return success_response(comment.serialize())
+    
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)

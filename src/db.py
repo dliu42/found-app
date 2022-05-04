@@ -16,8 +16,9 @@ class User(db.Model):
     username = db.Column(db.String, nullable = False)
     password = db.Column(db.String, nullable = False)
     email = db.Column(db.String, nullable = False)
-    posts = db.relationship("Post", cascades = "delete")
-    comments = db.relationship("Comment", cascades = "delete")
+    posts = db.relationship("Post", cascade = "delete")
+    comments = db.relationship("Comment", cascade = "delete")
+
     def __init__(self, **kwargs):
         """
         Initialize User object/entry
@@ -45,20 +46,23 @@ class Post(db.Model):
     """
     __tablename__ = "posts"
     id = db.Column(db.Integer, primary_key = True, autoincrement = True )
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id", nullable = False))
-    username = db.Column(db.String, db.ForeignKey("users.username", nullable = False))
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable = False)
+    #username = db.Column(db.String, db.ForeignKey("users.username"), nullable = False)
+    item = db.Column(db.String, nullable = False)
     description = db.Column(db.String, nullable = False)
     location = db.Column(db.String, nullable = False)
-    timestamp = db.Column(db.String, nullable = False)
     question = db.Column(db.String, nullable = False)
     returned = db.Column(db.Boolean, nullable = False)
+    timestamp = db.Column(db.String, nullable = False)
+    comments = db.relationship("Comment", cascade = "delete")
 
     def __init__(self, **kwargs):
         """
         Initialize post object/entry
         """
         self.user_id = kwargs.get("user_id")
-        self.username = kwargs.get("username")
+        #self.username = kwargs.get("username")
+        self.item = kwargs.get("item", "")
         self.description = kwargs.get("description", "")
         self.location = kwargs.get("location", "")
         self.question = kwargs.get("question", "")
@@ -72,25 +76,27 @@ class Post(db.Model):
         return {
             "id" : self.id,
             "user_id" : self.user_id,
-            "username" : self.username,
+            #"username" : self.username,
+            "item" : self.item,
             "description" : self.description,
             "timestamp" : self.timestamp,
             "location" : self.location,
             "question" : self.question,
-            "returned" : self.returned
+            "returned" : self.returned,
+            "comments" : [c.serialize() for c in self.comments]
         }
 
 class Comment(db.Model):
     """
     Comment Model
     """
-    __tablename__ = "users"
+    __tablename__ = "comments"
     id = db.Column(db.Integer, primary_key = True, autoincrement = True )
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id", nullable = False))
-    post_id = db.Column(db.Integer, db.ForeignKey("posts.id", nullable = False))
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable = False)
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.id"), nullable = False)
     message = db.Column(db.String, nullable = False)
     timestamp = db.Column(db.String, nullable = False)
-    comments = db.relationship("Comment", cascades = "delete")
+
     def __init__(self, **kwargs):
         """ 
         Initialize comment object/entry 
@@ -110,5 +116,4 @@ class Comment(db.Model):
             "post_id" : self.post_id,
             "message" : self.message,
             "timestamp" : self.timestamp,
-            "comments" : [c.serialize() for c in self.comments]
         }
