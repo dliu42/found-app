@@ -120,6 +120,13 @@ def update_user(user_id):
     db.session.commit()
     return success_response(user.serialize())
 
+@app.route("/api/posts/")
+def get_posts():
+    """
+    Endpoint for getting all posts
+    """
+    return success_response({"posts": [p.serialize() for p in Post.query.all()]})
+
 @app.route("/api/users/<int:user_id>/posts/", methods=["POST"])
 def create_post(user_id):
     """
@@ -223,6 +230,23 @@ def create_comment(user_id, post_id):
     db.session.add(new_comment)
     db.session.commit()
     return success_response(new_comment.serialize())
+
+@app.route("/api/comments/<int:comment_id>/", methods=["POST"])
+def update_comment(comment_id):
+    """
+    Endpoint for updating a comment by id
+    """
+    body = json.loads(request.data)
+    comment = Comment.query.filter_by(id=comment_id).first()
+    if comment is None:
+        return failure_response("Comment not found!")
+    comment.user_id = comment.user_id
+    comment.post_id = comment.post_id 
+    comment.username = comment.username
+    comment.message = body.get("message", comment.message)
+    comment.timestamp = datetime.now()
+    db.session.commit()
+    return success_response(comment.serialize())
 
 @app.route("/api/comments/<int:comment_id>/", methods=["DELETE"])
 def delete_comment(comment_id):
