@@ -7,6 +7,9 @@ from db import User
 from db import Post
 from db import Comment
 from datetime import datetime
+from google.oauth2 import id_token
+from google.auth.transport import requests
+import os 
 
 
 app = Flask(__name__)
@@ -28,9 +31,26 @@ def success_response(data, code= 200):
 def failure_response(message, code=404):
     return json.dumps({"error": message}), code
 
+#login 
+def onSignIn(googleUser):
+    id_token = googleUser.getAuthResponse().id_token
+
 
 #routes 
 @app.route("/")
+
+@app.route("/api/users/login/<token>")
+def verify_login(token):
+    """
+    Endpoint for verifying a login
+    """
+    try :
+        idinfo = id_token.verify_oauth2_token(token, requests.Request(), os.environ.get("CLIENT_ID"))
+        userid=idinfo["sub"]
+    except ValueError:
+        # Invalid token
+        return failure_response("Login not successful!")
+    
 @app.route("/api/users/")
 def get_users():
     """
@@ -160,7 +180,7 @@ def create_post(user_id):
 
     new_post = Post(
         user_id = user_id,
-        #username = user["username"],
+        username = user.username,
         item = item,
         description = description,
         location = location,
@@ -194,6 +214,7 @@ def update_post(post_id):
     if post is None:
         return failure_response("Post not found!")
     post.user_id = post.user_id
+    post.username = post.username
     post.description = body.get("description", post.description)
     post.location = body.get("location", post.location)
     post.question = body.get("question", post.question)
@@ -222,7 +243,7 @@ def create_comment(user_id, post_id):
 
     new_comment = Comment(
         user_id = user_id,
-        #username = post.username,
+        username = post.username,
         post_id = post_id,
         message = message,
         timestamp = datetime.now(),

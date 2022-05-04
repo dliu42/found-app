@@ -47,7 +47,7 @@ class Post(db.Model):
     __tablename__ = "posts"
     id = db.Column(db.Integer, primary_key = True, autoincrement = True )
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable = False)
-    #username = db.Column(db.String, db.ForeignKey("users.username"), nullable = False)
+    username = db.Column(db.String, nullable = False)
     item = db.Column(db.String, nullable = False)
     description = db.Column(db.String, nullable = False)
     location = db.Column(db.String, nullable = False)
@@ -61,7 +61,7 @@ class Post(db.Model):
         Initialize post object/entry
         """
         self.user_id = kwargs.get("user_id")
-        #self.username = kwargs.get("username")
+        self.username = kwargs.get("username")
         self.item = kwargs.get("item", "")
         self.description = kwargs.get("description", "")
         self.location = kwargs.get("location", "")
@@ -76,7 +76,7 @@ class Post(db.Model):
         return {
             "id" : self.id,
             "user_id" : self.user_id,
-            #"username" : self.username,
+            "username" : self.username,
             "item" : self.item,
             "description" : self.description,
             "timestamp" : self.timestamp,
@@ -102,6 +102,7 @@ class Comment(db.Model):
         Initialize comment object/entry 
         """
         self.user_id = kwargs.get("user_id")
+        self.username = kwargs.get("username")
         self.post_id = kwargs.get("post_id")
         self.message = kwargs.get("message", "")
         self.timestamp = kwargs.get("timestamp", datetime.now())
@@ -113,7 +114,8 @@ class Comment(db.Model):
         return {
             "id" : self.id,
             "user_id" : self.user_id,
+            "username" : self.username,
             "post_id" : self.post_id,
             "message" : self.message,
-            "timestamp" : self.timestamp,
+            "timestamp" : self.timestamp
         }
