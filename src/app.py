@@ -21,7 +21,7 @@ app.config["SQLALCHEMY_ECHO"] = True
 
 db.init_app(app)
 with app.app_context():
-    db.create_all()
+    db.drop_all()
     
 
 # success and failure responses
