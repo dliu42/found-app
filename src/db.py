@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+import datetime
+import bcrypt 
 db = SQLAlchemy()
 
 # implement database model classes
@@ -19,13 +20,18 @@ class User(db.Model):
     posts = db.relationship("Post", cascade = "delete")
     comments = db.relationship("Comment", cascade = "delete")
 
+    session_token = db.Column(db.String, nullable=False, unique=True)
+    session_expiration = db.Column(db.DateTime, nullable=False)
+    update_token = db.Column(db.String, nullable=False, unique=True)
+
     def __init__(self, **kwargs):
         """
         Initialize User object/entry
         """
         self.username = kwargs.get("username", "")
-        self.password = kwargs.get("password", "")
+        self.password = bcrypt.hashpw(kwargs.get("password").encode("utf8"),bcrypt.gensalt(rounds=13))
         self.email = kwargs.get("email", "")
+        self.renew_session()
 
     def serialize(self):
         """
@@ -39,6 +45,11 @@ class User(db.Model):
             "posts" : [p.serialize() for p in self.posts],
             "comments" : [c.serialize() for c in self.comments]
         }
+
+    def renew_session(self):
+        self.session_token = self.urlsafe_base_64()
+        self.session_expiration = datetime.datetime.now() + datetime.timedelta(days=1)
+        self.update_token = self.urlsafe_base_64()
 
 class Post(db.Model):
     """
@@ -67,7 +78,7 @@ class Post(db.Model):
         self.location = kwargs.get("location", "")
         self.question = kwargs.get("question", "")
         self.returned = kwargs.get("returned", False)
-        self.timestamp = kwargs.get("timestamp", datetime.now())
+        self.timestamp = kwargs.get("timestamp", datetime.datetime.now())
         
     def serialize(self):
         """
@@ -106,7 +117,7 @@ class Comment(db.Model):
         self.username = kwargs.get("username")
         self.post_id = kwargs.get("post_id")
         self.message = kwargs.get("message", "")
-        self.timestamp = kwargs.get("timestamp", datetime.now())
+        self.timestamp = kwargs.get("timestamp", datetime.datetime.now())
         
     def serialize(self):
         """

@@ -35,6 +35,13 @@ def failure_response(message, code=404):
 def onSignIn(googleUser):
     id_token = googleUser.getAuthResponse().id_token
 
+def extract_token(request):
+    authorization = request.headers.get("Authorization")
+    if authorization is None:
+        return False, json.dumps({"Missing authorization header"})
+    token = authorization.replace("Bearer","").strip()
+
+    return True, token 
 
 #routes 
 @app.route("/")
@@ -47,9 +54,41 @@ def verify_login(token):
     try :
         idinfo = id_token.verify_oauth2_token(token, requests.Request(), os.environ.get("CLIENT_ID"))
         userid=idinfo["sub"]
+        return True, json.dumps({"Successfully logged in"})
     except ValueError:
         # Invalid token
         return failure_response("Login not successful!")
+
+@app.route("/api/users/login/<token>")
+def login(token):
+    user = User.query.filter_by(session_token=token).first()
+    was_successful, message = verify_login(token)
+    if not was_successful:
+        return failure_response("Invalid login", 401)
+    return success_response(
+        {
+            "session_token": user.session_token, 
+            "session_expiration": user.session_expiration,
+            "update_token": user.update_token
+        }
+    )
+
+@app.route("/api/users/logout/", methods=["POST"])
+def logout():
+    was_successful, session_token = extract_token(request)
+    if not was_successful:
+        return session_token 
+    
+    user = User.query.filter_by(session_token=session_token).first()
+    if not user:
+        return failure_response("Invalid session token")
+    user.session_expiration = datetime.now()
+    db.session.commit()
+
+    return success_response({
+        "message": "You have successfully logged out"
+    })
+    
     
 @app.route("/api/users/")
 def get_users():
@@ -76,6 +115,11 @@ def create_user():
     email = body.get("email")
     if email is None:
         return failure_response("Email not found!", 400)
+    
+    #checks if user already exists
+    user = User.query.filter(User.email == email).first()
+    if user:
+        return user 
 
     new_user=User(
         username = username, 
