@@ -7,8 +7,6 @@ from db import User
 from db import Post
 from db import Comment
 from datetime import datetime
-from google.oauth2 import id_token
-from google.auth.transport import requests
 import os 
 
 
@@ -31,9 +29,6 @@ def success_response(data, code= 200):
 def failure_response(message, code=404):
     return json.dumps({"error": message}), code
 
-#login 
-def onSignIn(googleUser):
-    id_token = googleUser.getAuthResponse().id_token
 
 def extract_token(request):
     authorization = request.headers.get("Authorization")
