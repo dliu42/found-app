@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 import datetime
 import bcrypt 
+import os
 db = SQLAlchemy()
 
 # implement database model classes
