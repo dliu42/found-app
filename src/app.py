@@ -42,19 +42,6 @@ def extract_token(request):
 @app.route("/")
 
 @app.route("/api/users/login/<token>")
-def verify_login(token):
-    """
-    Endpoint for verifying a login
-    """
-    try :
-        idinfo = id_token.verify_oauth2_token(token, requests.Request(), os.environ.get("CLIENT_ID"))
-        userid=idinfo["sub"]
-        return True, json.dumps({"Successfully logged in"})
-    except ValueError:
-        # Invalid token
-        return failure_response("Login not successful!")
-
-@app.route("/api/users/login/<token>")
 def login(token):
     user = User.query.filter_by(session_token=token).first()
     was_successful, message = verify_login(token)
