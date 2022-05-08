@@ -7,6 +7,7 @@
 
 import UIKit
 
+
 class ViewController: UIViewController {
 
     // MARK: UI Elements
@@ -23,11 +24,9 @@ class ViewController: UIViewController {
     let filterAlert = UIAlertController(title: "Filter posts", message: nil, preferredStyle: .alert)
     let updateAlert = UIAlertController(title: "Update your post", message: nil, preferredStyle: .alert)
     
-    // MARK: Data
     var postData: [Post] = []
     var shownPostData: [Post] = []
     
-    // MARK: Variables
     var currentIndexPathToUpdate: IndexPath? // We use this for updating and deleting
     
     override func viewDidLoad() {
@@ -42,8 +41,6 @@ class ViewController: UIViewController {
         refreshData()
     }
     
-    /// Order `postData` in order of newest to oldest.
-    /// PRECONDITION: Post ids are ordered where the lowest is the oldest and the highest is the newest. */
     func sortPostData() {
         postData.sort { (leftPost, rightPost) -> Bool in
             return leftPost.id > rightPost.id
@@ -51,28 +48,20 @@ class ViewController: UIViewController {
     }
     
     func createDummyData() {
-        // MARK: Use getAllPosts
-        /**
-         We want to retrieve data from the server here upon refresh. Make sure to
-         1) Sort the posts with `sortPostData`
-         2) Update `postData` & `shownPostData` and reload `postTableView`
-         */
         let post1 = Post(id: "0", title: "Airpods", body: "Duffield Hall", poster: "el667", timeStamp: "2021-04-11T01:29:25.068500639Z")
         let post2 = Post(id: "1", title: "Water Bottle", body: "Uris Library", poster: "abc", timeStamp: "2021-04-11T03:39:35.068500639Z")
         let post3 = Post(id: "2", title: "Black Rain Jacket", body: "Cocktail Lounge", poster: "cde", timeStamp: "2021-04-12T01:29:54.068500639Z")
         let post4 = Post(id: "3", title: "Silver Necklace", body: "TCAT", poster: "hello", timeStamp: "2021-04-12T01:30:56.068500639Z")
         let post5 = Post(id: "4", title: "Backpack", body: "Noyes Gym", poster: "fgh", timeStamp: "2021-04-12T04:19:45.068500639Z")
-
-        // TODO: Replace the hard coded data with a getAllPost request
         postData = [post1, post2, post3, post4, post5]
         sortPostData()
         shownPostData = postData
-//        NetworkManager.getAllPosts { posts in
-//            self.postData = posts
-//            self.shownPostData = self.postData
-//            self.postTableView.reloadData()
-//            self.refreshControl.endRefreshing()
-//        }
+        NetworkManager.getAllPosts { posts in
+            self.postData = posts
+            self.shownPostData = self.postData
+            self.postTableView.reloadData()
+            self.refreshControl.endRefreshing()
+        }
     }
     
     func setupViews() {
@@ -115,21 +104,14 @@ class ViewController: UIViewController {
                let body = textFields[1].text?.trimmingCharacters(in: .whitespacesAndNewlines),
                let poster = textFields[2].text?.trimmingCharacters(in: .whitespacesAndNewlines),
                title != "", body != "", poster != "" {
-                // MARK: Use createPost
-                /**
-                We want to create data onto the server here upon pressing `Create` with the appropriate title and body. Make sure to
-                1) Update `postData` & `shownPostData` and reload `postTableView`
-                 
-                 DO NOT CALL `getAllPosts`
-                */
 
                 // TODO: Use createPost to create a new post
-//                NetworkManager.createPost(title: title, body: body, poster: poster) {post in
-//                    self.postData.append(post)
-//                    self.sortPostData()
-//                    self.shownPostData = self.postData
-//                    self.postTableView.reloadData()
-//                }
+                NetworkManager.createPost(title: title, body: body, poster: poster) {post in
+                    self.postData.append(post)
+                    self.sortPostData()
+                    self.shownPostData = self.postData
+                    self.postTableView.reloadData()
+                }
 
                 print("\(title) \(body) \(poster)")
             }
@@ -144,44 +126,16 @@ class ViewController: UIViewController {
         })
         filterAlert.addAction(UIAlertAction(title: "Filter", style: .default, handler: { action in
             if let id = self.filterAlert.textFields?[0].text?.trimmingCharacters(in: .whitespacesAndNewlines), let integerID = Int(id) {
-                // MARK: Use getSpecificPost
-                /**
-                We want to retrieve a single piece of data from the server here upon pressing `Filter` with the appropriate id. Make sure to
-                 1) Update `shownPostData` and reload `postTableView`
-                 
-                 DO NOT UPDATE `postData`
-                 This is why we use `shownPostData` in addition to `postData`. When you press Cancel, verify that the data is set back to the original (this is already done for you, just check that it still works)
-                 
-                 DO NOT CALL `getAllPosts`
-                */
-
-//                // TODO: Use getSpecificPost to achieve filtering based on Post ID
-//                NetworkManager.getSpecificPost(id: id) {post in
-//                    self.shownPostData = [post]
-//                    self.sortPostData()
-//                    self.postTableView.reloadData()
-//                }
-
+                NetworkManager.getSpecificPost(id: id) {post in
+                    self.shownPostData = [post]
+                    self.sortPostData()
+                    self.postTableView.reloadData()
+                }
                 print(id)
                 
                 self.filterPostButton.title = "Cancel"
             } else if let poster = self.filterAlert.textFields?[1].text?.trimmingCharacters(in: .whitespacesAndNewlines),
                poster != "" {
-                // NOTE this will not run unless you clear the ID textfield.
-                // MARK: Use getPostersPosts
-                /**
-                We want to retrieve data from the server here upon pressing `Filter` with the appropriate poster. Make sure to
-                 1) Sort the posts with `sortPostData`
-                 2) Update `shownPostData` and reload `postTableView`
-                 
-                 DO NOT UPDATE `postData`
-                 This is why we use `shownPostData` in addition to `postData`. When you press Cancel, verify that the data is set back to the original (this is already done for you, just check that it still works)
-                 
-                 DO NOT CALL `getAllPosts`
-                */
-
-                // TODO: (Extra Credit) Use getPostersPosts to achieve filtering based on poster
-
                 print(poster)
                 self.filterPostButton.title = "Cancel"
             }
@@ -200,23 +154,16 @@ class ViewController: UIViewController {
                let poster = textFields[1].text?.trimmingCharacters(in: .whitespacesAndNewlines),
                let indexPath = self.currentIndexPathToUpdate, body != "", poster != "" {
                 // MARK: Use updatePost
-                /**
-                We want to update data from the server here upon pressing `Update` with the appropriate poster and a body. Make sure to
-                1) Update `postData` & `shownPostData` and reload `postTableView`
-                 
-                 Note we can only update a post's body if we created. We want to use our poster name, which acts as a password, to guarantee this.
-                 
-                 DO NOT CALL `getAllPosts`
-                */
+                
                 let postToChange = self.shownPostData[indexPath.row]
                 let id = postToChange.id
 
                 // TODO: Use updatePost to achieve the ability to update a post by clicking on it
-//                NetworkManager.updatePost(id: id, body: body, poster: poster) {post in
-//                    self.shownPostData = self.postData
-//                    self.sortPostData()
-//                    self.postTableView.reloadData()
-//                }
+                NetworkManager.updatePost(id: id, body: body, poster: poster) {post in
+                    self.shownPostData = self.postData
+                    self.sortPostData()
+                    self.postTableView.reloadData()
+                }
 
                 print("\(indexPath) \(body) \(poster)")
             }
@@ -237,12 +184,12 @@ class ViewController: UIViewController {
                 let id = self.shownPostData[indexPath.row].id
 
                 // TODO: Use deletePost to remove a selected post
-//                NetworkManager.deletePost(id: id, poster: poster) { post in
-//                    self.postData.remove(at: indexPath.row)
-//                    self.shownPostData = self.postData
-//                    self.sortPostData()
-//                    self.postTableView.reloadData()
-//                }
+                NetworkManager.deletePost(id: id, poster: poster) { post in
+                    self.postData.remove(at: indexPath.row)
+                    self.shownPostData = self.postData
+                    self.sortPostData()
+                    self.postTableView.reloadData()
+                }
 
                 print("\(indexPath) \(poster)")
             }
@@ -271,19 +218,14 @@ class ViewController: UIViewController {
 
         // TODO: Use getAllPosts to fetch all the posts and display it in the tableView
         
-//        NetworkManager.getAllPosts { posts in
-//            self.postData = posts
-//            self.sortPostData()
-//            self.shownPostData = self.postData
-//            self.postTableView.reloadData()
-//            self.refreshControl.endRefreshing()
-//        }
+        NetworkManager.getAllPosts { posts in
+            self.postData = posts
+            self.sortPostData()
+            self.shownPostData = self.postData
+            self.postTableView.reloadData()
+            self.refreshControl.endRefreshing()
+        }
 
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { // REPLACE THIS!
-//            self.shownPostData = self.postData
-//            self.postTableView.reloadData()
-//            self.refreshControl.endRefreshing()
-//        }
     }
     
     @objc func prepareFilteringAction() {

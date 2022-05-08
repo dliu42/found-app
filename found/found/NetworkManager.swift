@@ -9,18 +9,6 @@ import Foundation
 
 class NetworkManager {
     
-    /** To receive full marks on this assignment, you must do ALL of the following
-     1) Setup CocoaPods to install and import Alamofire to actually do this assignment.
-     2) Fill out the function stubs provided below - leave them untouched unless otherwise instructed.
-     a) Note that all completions are of type `Any` - you should change these to the correct types (and any necessary keywords..)
-     3) For each function stub, make sure you go to `Post.swift` to add Codable structs as necessary
-     4) After filling in a function stub, go to `ViewController.swift` and add the completion in the marked area for that function and verify that your implementation works
-     a) Steps are provided to help guide you in what to do inside your completion
-     b) Print statements are provided to help you debug and to hint towards which variables you will need to use the implement the completion body
-     5) Don't modify any other code in this project without good reason.
-     a) This includes the MARK and explanatory comments, leave them to make your graders' lives easier.
-     */
-    
     /** Put the provided server endpoint here. If you don't know what this is, contact course staff. */
     static let host = "https://ios-course-message-board.herokuapp.com"
 
